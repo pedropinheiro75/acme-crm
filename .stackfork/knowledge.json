@@ -4,7 +4,7 @@
   "inputs": [
     {
       "path": "docker-compose.yml",
-      "sha256": "28fd80f7c06b5ee2c53c90b57226a878e3249a1777b536a2f1805c8a1121f354"
+      "sha256": "e932b4ce64876055ae897d32bee4d3a5fa962883ad73e98fa9690c51c0ecd4cb"
     },
     {
       "path": "package-lock.json",
@@ -133,12 +133,6 @@
       "reason": "networks.default: renamed to sf-learn_default so concurrent stacks don't collide"
     },
     {
-      "kind": "published_port",
-      "target": "services.redis.ports[0]",
-      "action": "rewrite",
-      "reason": "services.redis: published port stripped so Docker assigns a random host port"
-    },
-    {
       "kind": "build_image",
       "target": "services.web",
       "action": "rewrite",
@@ -185,6 +179,12 @@
       "target": "services.postgres.ports[0]",
       "action": "rewrite",
       "reason": "services.postgres: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.redis.ports[0]",
+      "action": "rewrite",
+      "reason": "services.redis: published port stripped so Docker assigns a random host port"
     }
   ],
   "plan": {
@@ -318,15 +318,15 @@
       "note": "hybrid mode: node --watch restarts on save"
     },
     {
+      "service": "web",
+      "mode": "hot",
+      "note": "hybrid: index.html is read on every request; container: rebuild"
+    },
+    {
       "service": "notifier",
       "mode": "rebuild",
       "proposed": true,
       "evidence": "Dockerfile:3"
-    },
-    {
-      "service": "web",
-      "mode": "hot",
-      "note": "hybrid: index.html is read on every request; container: rebuild"
     }
   ],
   "verification": {
