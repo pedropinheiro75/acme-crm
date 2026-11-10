@@ -30,7 +30,6 @@ Files: docker-compose.yml
 
 - [rewrite] volumes.pgdata: volumes.pgdata: renamed to sf-learn_pgdata so concurrent stacks don't collide
 - [rewrite] networks.default: networks.default: renamed to sf-learn_default so concurrent stacks don't collide
-- [rewrite] services.redis.ports[0]: services.redis: published port stripped so Docker assigns a random host port
 - [rewrite] services.web: services.web: image renamed to sf-learn-web:dev for the isolated build
 - [rewrite] services.web.ports[0]: services.web: published port stripped so Docker assigns a random host port
 - [rewrite] services.api: services.api: image renamed to sf-learn-api:dev for the isolated build
@@ -39,6 +38,7 @@ Files: docker-compose.yml
 - [rewrite] services.mailpit.ports[1]: services.mailpit: published port stripped so Docker assigns a random host port
 - [rewrite] services.notifier: services.notifier: image renamed to sf-learn-notifier:dev for the isolated build
 - [rewrite] services.postgres.ports[0]: services.postgres: published port stripped so Docker assigns a random host port
+- [rewrite] services.redis.ports[0]: services.redis: published port stripped so Docker assigns a random host port
 
 ## Startup plan
 
@@ -63,8 +63,8 @@ Status: recorded
 ## How code changes reach the app
 
 - api: rebuild hybrid mode: node --watch restarts on save
-- notifier: rebuild (proposed) [Dockerfile:3]
 - web: hot hybrid: index.html is read on every request; container: rebuild
+- notifier: rebuild (proposed) [Dockerfile:3]
 
 ## Secrets (names only)
 
