@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "status": "draft",
+  "status": "verified",
   "inputs": [
     {
       "path": "docker-compose.yml",
@@ -328,5 +328,27 @@
       "mode": "hot",
       "note": "hybrid: index.html is read on every request; container: rebuild"
     }
-  ]
+  ],
+  "verification": {
+    "date": "2026-11-10",
+    "checks": [
+      "database identity per worktree",
+      "won deal emailed by the notifier",
+      "hybrid api and web on the host against the isolated database"
+    ],
+    "confirmation": "yes, the plan starts the CRM in container and hybrid mode",
+    "entry": "web:5173",
+    "links": [
+      {
+        "name": "Mailpit",
+        "answered": true,
+        "status": 200
+      },
+      {
+        "name": "Stack JSON",
+        "answered": true,
+        "status": 200
+      }
+    ]
+  }
 }
