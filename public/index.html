@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acme CRM</title>
+  <style>
+    :root { --bg: #0f1117; --panel: #171a23; --line: #262a36; --ink: #e8eaf2; --muted: #8a90a6; --brand: #22c55e; --accent: #38bdf8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 16px 28px; border-bottom: 1px solid var(--line); }
+    .logo { font-weight: 800; font-size: 20px; } .logo span { color: var(--brand); }
+    .host { font: 12px ui-monospace, Menlo, monospace; color: var(--muted); }
+    .runtime { margin: 22px 28px 0; padding: 16px 20px; border-radius: 14px; border: 1px solid var(--line); background: linear-gradient(90deg, rgba(34,197,94,.12), transparent); display: flex; gap: 16px; align-items: center; }
+    .runtime.container { background: linear-gradient(90deg, rgba(56,189,248,.14), transparent); }
+    .runtime .icon { font-size: 34px; }
+    .runtime b { font-size: 16px; }
+    .runtime small { display: block; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+    main { display: grid; grid-template-columns: 1fr 320px; gap: 22px; padding: 22px 28px 50px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    h2 { margin: 0 0 12px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; }
+    td.value { font-variant-numeric: tabular-nums; font-weight: 700; }
+    select { background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+    .stage-won { color: var(--brand); font-weight: 700; } .stage-lost { color: #f87171; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12.5px; }
+    .kv dt { color: var(--muted); } .kv dd { margin: 0; font-family: ui-monospace, Menlo, monospace; word-break: break-all; }
+    .chip { display: inline-block; font: 11px ui-monospace, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; margin: 0 4px 4px 0; }
+    .contact { padding: 8px 0; border-bottom: 1px solid var(--line); } .contact small { color: var(--muted); display: block; }
+    aside { display: flex; flex-direction: column; gap: 22px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Acme <span>CRM</span></div>
+    <div class="host" id="host"></div>
+  </header>
+
+  <div class="runtime" id="runtime"><div class="icon">⏳</div><div><b>Connecting…</b></div></div>
+
+  <main>
+    <section class="panel">
+      <h2>Deals</h2>
+      <table>
+        <thead><tr><th>Deal</th><th>Company</th><th>Value</th><th>Stage</th></tr></thead>
+        <tbody id="deals"></tbody>
+      </table>
+    </section>
+    <aside>
+      <div class="panel"><h2>This environment</h2><dl class="kv" id="env"></dl></div>
+      <div class="panel"><h2>Contacts</h2><div id="contacts"></div></div>
+    </aside>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const money = (c) => '$' + Math.round(c / 100).toLocaleString();
+    const STAGES = ['lead', 'qualified', 'proposal', 'won', 'lost'];
+    $('host').textContent = location.host;
+
+    async function loadEnv() {
+      const e = await fetch('/api/stack').then((r) => r.json());
+      const r = e.runtime;
+      const onHost = r.where === 'host';
+      $('runtime').className = 'runtime ' + r.where;
+      $('runtime').innerHTML = `<div class="icon">${onHost ? '💻' : '🐳'}</div>
+        <div><b>API running on ${r.label}</b>
+        <small>pid ${r.pid} · node ${r.node} · port ${r.port} · started ${new Date(r.startedAt).toLocaleTimeString()}${onHost ? ' · hot reload on' : ''}</small></div>`;
+      $('env').innerHTML = `
+        <dt>Address</dt><dd>${location.host}</dd>
+        <dt>DB cluster</dt><dd>${e.databaseCluster}</dd>
+        <dt>Migrations</dt><dd>${e.migrations.map((m) => `<span class="chip">${m}</span>`).join('') || '—'}</dd>
+        <dt>Data</dt><dd>${e.counts.companies ?? 0} companies · ${e.counts.contacts ?? 0} contacts · ${e.counts.deals ?? 0} deals</dd>`;
+    }
+
+    async function loadDeals() {
+      const deals = await fetch('/api/deals').then((r) => r.json());
+      $('deals').innerHTML = deals.map((d) => `<tr>
+        <td>${d.title}</td><td>${d.company}</td><td class="value">${money(d.value_cents)}</td>
+        <td><select class="stage-${d.stage}" onchange="move(${d.id}, this.value)">
+          ${STAGES.map((s) => `<option ${s === d.stage ? 'selected' : ''}>${s}</option>`).join('')}
+        </select></td></tr>`).join('');
+    }
+
+    async function loadContacts() {
+      const contacts = await fetch('/api/contacts').then((r) => r.json());
+      $('contacts').innerHTML = contacts.map((c) => `<div class="contact">${c.name}<small>${c.role} · ${c.company}</small></div>`).join('');
+    }
+
+    async function move(id, stage) {
+      await fetch(`/api/deals/${id}/stage`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stage }) });
+      loadDeals();
+    }
+
+    loadEnv(); loadDeals(); loadContacts();
+    setInterval(loadEnv, 2000);
+  </script>
+</body>
+</html>

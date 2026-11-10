@@ -1,0 +1,17 @@
+{
+  "name": "acme-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Acme CRM: deals, contacts and a won-deal notifier",
+  "scripts": {
+    "dev:api": "node --watch src/api.js",
+    "dev:web": "node --watch src/web.js",
+    "db:migrate": "node src/migrate.js",
+    "db:seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1",
+    "redis": "^4.7.0"
+  }
+}

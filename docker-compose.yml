@@ -1,0 +1,89 @@
+# acme-crm: a sales CRM. Its dependencies always run in Docker. The api and
+# the web app can run in Docker too (container mode), or on your machine
+# with hot reload and a debugger (hybrid mode), still isolated per branch.
+
+services:
+  # --- the app: replaced by host apps in hybrid mode ----------------------
+  api:
+    build: .
+    command: ["node", "src/api.js"]
+    labels:
+      io.stackfork.http: "4000"
+    environment:
+      PORT: "4000"
+      DATABASE_URL: postgres://crm:crm@postgres:5432/crm
+      REDIS_URL: redis://:crm@redis:6379
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  web:
+    build: .
+    command: ["node", "src/web.js"]
+    labels:
+      io.stackfork.http: "5173"
+    environment:
+      PORT: "5173"
+      API_URL: http://api:4000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  # --- dependencies: always in Docker ------------------------------------
+  # Emails the sales team when a deal is won. Uses a secret token.
+  notifier:
+    build: .
+    command: ["node", "src/notifier.js"]
+    environment:
+      REDIS_URL: redis://:crm@redis:6379
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+    secrets:
+      - NOTIFY_API_TOKEN
+    depends_on:
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    labels:
+      io.stackfork.data: pgdata
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+      POSTGRES_DB: crm
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "crm"]
+    ports:
+      - "6379:6379"
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    labels:
+      io.stackfork.http: "8025"
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+secrets:
+  NOTIFY_API_TOKEN:
+    environment: NOTIFY_API_TOKEN
+
+volumes:
+  pgdata:

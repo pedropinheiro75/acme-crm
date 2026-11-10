@@ -1,0 +1,332 @@
+{
+  "schema": 2,
+  "status": "draft",
+  "inputs": [
+    {
+      "path": "docker-compose.yml",
+      "sha256": "28fd80f7c06b5ee2c53c90b57226a878e3249a1777b536a2f1805c8a1121f354"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "2f8085b1196e722cfdf3eb8e56ebe3ceaaac3047b72b1a3d9888ca4e302c496e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "159292d5918070c70a4265566d0d38b8769a31516f610892ba7742c00641e6a2"
+    }
+  ],
+  "facts": {
+    "compose_files": [
+      "docker-compose.yml"
+    ],
+    "services": [
+      {
+        "name": "api",
+        "build": true,
+        "ports": [
+          "4000:4000"
+        ],
+        "networks": [
+          "default"
+        ]
+      },
+      {
+        "name": "mailpit",
+        "image": "axllent/mailpit:v1.21",
+        "ports": [
+          "8025:8025",
+          "1025:1025"
+        ],
+        "networks": [
+          "default"
+        ]
+      },
+      {
+        "name": "notifier",
+        "build": true,
+        "networks": [
+          "default"
+        ]
+      },
+      {
+        "name": "postgres",
+        "image": "postgres:16-alpine",
+        "db_engine": "postgres",
+        "db_major_version": "16",
+        "ports": [
+          "5432:5432"
+        ],
+        "volumes": [
+          "pgdata"
+        ],
+        "networks": [
+          "default"
+        ],
+        "healthcheck": true
+      },
+      {
+        "name": "redis",
+        "image": "redis:7-alpine",
+        "db_engine": "redis",
+        "db_major_version": "7",
+        "ports": [
+          "6379:6379"
+        ],
+        "networks": [
+          "default"
+        ]
+      },
+      {
+        "name": "web",
+        "build": true,
+        "ports": [
+          "5173:5173"
+        ],
+        "networks": [
+          "default"
+        ]
+      }
+    ],
+    "package_manager": "npm",
+    "lockfile": "package-lock.json",
+    "scripts": [
+      {
+        "role": "migrate",
+        "name": "db:migrate",
+        "source": "package.json",
+        "command": "node src/migrate.js"
+      },
+      {
+        "role": "seed",
+        "name": "db:seed",
+        "source": "package.json",
+        "command": "node src/seed.js"
+      },
+      {
+        "role": "dev",
+        "name": "dev:api",
+        "source": "package.json",
+        "command": "node --watch src/api.js"
+      },
+      {
+        "role": "dev",
+        "name": "dev:web",
+        "source": "package.json",
+        "command": "node --watch src/web.js"
+      }
+    ],
+    "migration_dirs": [
+      "migrations"
+    ]
+  },
+  "refusals": [
+    {
+      "kind": "renamed_volume",
+      "target": "volumes.pgdata",
+      "action": "rewrite",
+      "reason": "volumes.pgdata: renamed to sf-learn_pgdata so concurrent stacks don't collide"
+    },
+    {
+      "kind": "renamed_network",
+      "target": "networks.default",
+      "action": "rewrite",
+      "reason": "networks.default: renamed to sf-learn_default so concurrent stacks don't collide"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.redis.ports[0]",
+      "action": "rewrite",
+      "reason": "services.redis: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "build_image",
+      "target": "services.web",
+      "action": "rewrite",
+      "reason": "services.web: image renamed to sf-learn-web:dev for the isolated build"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.web.ports[0]",
+      "action": "rewrite",
+      "reason": "services.web: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "build_image",
+      "target": "services.api",
+      "action": "rewrite",
+      "reason": "services.api: image renamed to sf-learn-api:dev for the isolated build"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.api.ports[0]",
+      "action": "rewrite",
+      "reason": "services.api: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.mailpit.ports[0]",
+      "action": "rewrite",
+      "reason": "services.mailpit: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.mailpit.ports[1]",
+      "action": "rewrite",
+      "reason": "services.mailpit: published port stripped so Docker assigns a random host port"
+    },
+    {
+      "kind": "build_image",
+      "target": "services.notifier",
+      "action": "rewrite",
+      "reason": "services.notifier: image renamed to sf-learn-notifier:dev for the isolated build"
+    },
+    {
+      "kind": "published_port",
+      "target": "services.postgres.ports[0]",
+      "action": "rewrite",
+      "reason": "services.postgres: published port stripped so Docker assigns a random host port"
+    }
+  ],
+  "plan": {
+    "modes": [
+      "container",
+      "hybrid"
+    ],
+    "status": "recorded",
+    "stop_cascade": true,
+    "steps": [
+      {
+        "id": "prepare",
+        "kind": "prepare",
+        "args": [
+          "-f",
+          "docker-compose.yml"
+        ]
+      },
+      {
+        "id": "up",
+        "kind": "compose-up"
+      },
+      {
+        "id": "migrate",
+        "kind": "exec",
+        "modes": [
+          "container"
+        ],
+        "service": "api",
+        "cmd": "node src/migrate.js",
+        "once": "schema"
+      },
+      {
+        "id": "seed",
+        "kind": "exec",
+        "modes": [
+          "container"
+        ],
+        "service": "api",
+        "cmd": "node src/seed.js",
+        "once": "data"
+      },
+      {
+        "id": "install-host",
+        "kind": "exec",
+        "modes": [
+          "hybrid"
+        ],
+        "cmd": "npm ci --no-audit --no-fund",
+        "once": "deps",
+        "on": "host"
+      },
+      {
+        "id": "migrate-host",
+        "kind": "exec",
+        "modes": [
+          "hybrid"
+        ],
+        "cmd": "node src/migrate.js",
+        "once": "schema",
+        "on": "host"
+      },
+      {
+        "id": "seed-host",
+        "kind": "exec",
+        "modes": [
+          "hybrid"
+        ],
+        "cmd": "node src/seed.js",
+        "once": "data",
+        "on": "host"
+      },
+      {
+        "id": "api",
+        "kind": "host",
+        "modes": [
+          "hybrid"
+        ],
+        "cmd": "node --watch src/api.js",
+        "name": "api",
+        "depends_on": [
+          "postgres",
+          "redis"
+        ]
+      },
+      {
+        "id": "web",
+        "kind": "host",
+        "modes": [
+          "hybrid"
+        ],
+        "cmd": "env API_URL={{api.url}} node --watch src/web.js",
+        "name": "web",
+        "depends_on": [
+          "host:api"
+        ]
+      }
+    ]
+  },
+  "answers": [
+    {
+      "question": "Where do migrations and seed run?",
+      "answer": "On the host, with the instance's DATABASE_URL: npm ci once per checkout, node src/migrate.js on every start (idempotent), node src/seed.js only when the data volume is new."
+    }
+  ],
+  "secrets": [
+    {
+      "name": "NOTIFY_API_TOKEN",
+      "hint": "Token for the notification service (any random string works for the demo)"
+    }
+  ],
+  "entry": {
+    "service": "web",
+    "port": 5173
+  },
+  "links": [
+    {
+      "name": "Mailpit",
+      "service": "mailpit",
+      "port": 8025
+    },
+    {
+      "name": "Stack JSON",
+      "path": "/api/stack"
+    }
+  ],
+  "reload": [
+    {
+      "service": "api",
+      "mode": "rebuild",
+      "note": "hybrid mode: node --watch restarts on save"
+    },
+    {
+      "service": "notifier",
+      "mode": "rebuild",
+      "proposed": true,
+      "evidence": "Dockerfile:3"
+    },
+    {
+      "service": "web",
+      "mode": "hot",
+      "note": "hybrid: index.html is read on every request; container: rebuild"
+    }
+  ]
+}
