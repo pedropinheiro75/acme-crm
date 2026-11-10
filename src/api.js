@@ -56,7 +56,7 @@ const routes = [
   ['GET', /^\/api\/health$/, async () => ({ ok: true })],
   ['GET', /^\/api\/stack$/, environment],
   ['GET', /^\/api\/deals$/, async () =>
-    (await pool.query(`SELECT d.*, c.name AS company FROM deals d JOIN companies c ON c.id = d.company_id ORDER BY d.value_cents DESC`)).rows],
+    (await pool.query(`SELECT d.*, c.name AS company, sp.probability FROM deals d JOIN companies c ON c.id = d.company_id LEFT JOIN stage_probability sp ON sp.stage = d.stage ORDER BY d.value_cents DESC`)).rows],
   ['GET', /^\/api\/contacts$/, async () =>
     (await pool.query(`SELECT p.*, c.name AS company FROM contacts p JOIN companies c ON c.id = p.company_id ORDER BY p.name`)).rows],
   ['POST', /^\/api\/deals\/(\d+)\/stage$/, async (req, [, id]) => {

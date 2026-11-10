@@ -43,8 +43,9 @@
   <main>
     <section class="panel">
       <h2>Deals</h2>
+      <p id="forecast"></p>
       <table>
-        <thead><tr><th>Deal</th><th>Company</th><th>Value</th><th>Stage</th></tr></thead>
+        <thead><tr><th>Deal</th><th>Company</th><th>Value</th><th>Forecast</th><th>Stage</th></tr></thead>
         <tbody id="deals"></tbody>
       </table>
     </section>
@@ -77,8 +78,11 @@
 
     async function loadDeals() {
       const deals = await fetch('/api/deals').then((r) => r.json());
+      const forecast = deals.reduce((t, d) => t + d.value_cents * d.probability / 100, 0);
+      $('forecast').innerHTML = `📈 Weighted forecast: <b>${money(forecast)}</b>`;
       $('deals').innerHTML = deals.map((d) => `<tr>
         <td>${d.title}</td><td>${d.company}</td><td class="value">${money(d.value_cents)}</td>
+        <td class="value">${money(d.value_cents * d.probability / 100)} <small>(${d.probability}%)</small></td>
         <td><select class="stage-${d.stage}" onchange="move(${d.id}, this.value)">
           ${STAGES.map((s) => `<option ${s === d.stage ? 'selected' : ''}>${s}</option>`).join('')}
         </select></td></tr>`).join('');
