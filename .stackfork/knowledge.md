@@ -1,6 +1,6 @@
 # Project knowledge
 
-Status: **draft**
+Status: **verified**
 
 ## Compose
 
@@ -74,4 +74,10 @@ Status: recorded
 
 - Q: Where do migrations and seed run?
   A: On the host, with the instance's DATABASE_URL: npm ci once per checkout, node src/migrate.js on every start (idempotent), node src/seed.js only when the data volume is new.
+
+## Verified
+
+- Date: 2026-11-10
+- Checks: database identity per worktree, won deal emailed by the notifier, hybrid api and web on the host against the isolated database
+- Confirmation: "yes, the plan starts the CRM in container and hybrid mode"
 
